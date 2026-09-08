@@ -1,0 +1,35 @@
+{
+  "name": "skillbridge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SkillBridge — A full-stack career platform for students and freshers",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"blue,green\" \"npm run dev --workspace=server\" \"npm run dev --workspace=client\"",
+    "dev:server": "npm run dev --workspace=server",
+    "dev:client": "npm run dev --workspace=client",
+    "build": "npm run build --workspace=server && npm run build --workspace=client",
+    "lint": "eslint .",
+    "db:migrate": "npm run db:migrate --workspace=server",
+    "db:push": "npm run db:push --workspace=server",
+    "db:seed": "npm run db:seed --workspace=server",
+    "db:setup": "npm run db:setup --workspace=server",
+    "db:studio": "npm run db:studio --workspace=server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.3"
+  },
+  "allowScripts": {
+    "@prisma/client@5.22.0": true,
+    "bcrypt@5.1.1": true,
+    "prisma@5.22.0": true,
+    "@swc/core@1.16.0": true,
+    "@prisma/engines@5.22.0": true,
+    "esbuild@0.28.2": true,
+    "esbuild@0.21.5": true
+  }
+}

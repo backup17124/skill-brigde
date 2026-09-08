@@ -1,0 +1,42 @@
+name: SkillBridge CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    name: Build & Verify
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install root & workspace dependencies
+        run: npm ci || npm install
+
+      - name: Setup Server Database & Generate Prisma Client
+        run: |
+          cd server
+          npm run db:migrate || npm run db:push
+          npx prisma generate
+
+      - name: Build Server
+        run: |
+          cd server
+          npm run build
+
+      - name: Build Client
+        run: |
+          cd client
+          npm run build
+

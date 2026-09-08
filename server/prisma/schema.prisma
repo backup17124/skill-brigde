@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  role          String         @default("STUDENT") // STUDENT, RECRUITER, ADMIN
+  avatarUrl     String?
+  bio           String?
+  headline      String?
+  company       String?
+  phone         String?
+  skills        String         @default("[]")
+  education     String?
+  experience    String?
+  resumeUrl     String?
+  resumeName    String?
+  githubUrl     String?
+  linkedinUrl   String?
+  portfolioUrl  String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  jobs          Job[]
+  refreshTokens RefreshToken[]
+  applications  Application[]  @relation("StudentApplications")
+  savedJobs     SavedJob[]     @relation("UserSavedJobs")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([tokenHash])
+}
+
+model Job {
+  id              String        @id @default(cuid())
+  title           String
+  description     String
+  company         String
+  location        String
+  workplaceType   String        @default("ON_SITE") // ON_SITE, REMOTE, HYBRID
+  jobType         String        @default("FULL_TIME") // FULL_TIME, PART_TIME, INTERNSHIP, CONTRACT
+  skills          String        @default("[]")
+  experienceLevel String
+  salaryMin       Int?
+  salaryMax       Int?
+  salaryCurrency  String        @default("INR")
+  status          String        @default("ACTIVE") // ACTIVE, DRAFT, CLOSED
+  postedBy        User          @relation(fields: [postedById], references: [id], onDelete: Cascade)
+  postedById      String
+  expiresAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  applications    Application[]
+  savedJobs       SavedJob[]
+
+  @@index([status])
+  @@index([workplaceType])
+  @@index([jobType])
+}
+
+model Application {
+  id         String   @id @default(cuid())
+  jobId      String
+  job        Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  studentId  String
+  student    User     @relation("StudentApplications", fields: [studentId], references: [id], onDelete: Cascade)
+  status     String   @default("PENDING") // PENDING, REVIEWING, SHORTLISTED, ACCEPTED, REJECTED
+  resumeUrl  String?
+  resumeName String?
+  coverNote  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([jobId, studentId])
+  @@index([status])
+  @@index([studentId])
+  @@index([jobId])
+}
+
+model SavedJob {
+  id        String   @id @default(cuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation("UserSavedJobs", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([jobId, userId])
+  @@index([userId])
+  @@index([jobId])
+}
