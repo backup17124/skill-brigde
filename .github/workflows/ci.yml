@@ -11,6 +11,28 @@ jobs:
     name: Build & Verify
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: skillbridge
+          POSTGRES_USER: skillbridge
+          POSTGRES_PASSWORD: skillbridge_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U skillbridge -d skillbridge"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://skillbridge:skillbridge_ci@localhost:5432/skillbridge
+      JWT_SECRET: ci-jwt-secret
+      JWT_REFRESH_SECRET: ci-jwt-refresh-secret
+      CLIENT_URL: http://localhost:5173
+      NODE_ENV: test
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,16 +49,11 @@ jobs:
       - name: Setup Server Database & Generate Prisma Client
         run: |
           cd server
-          npm run db:migrate || npm run db:push
+          npm run db:migrate
           npx prisma generate
 
       - name: Build Server
-        run: |
-          cd server
-          npm run build
+        run: npm run build --workspace=server
 
       - name: Build Client
-        run: |
-          cd client
-          npm run build
-
+        run: npm run build --workspace=client

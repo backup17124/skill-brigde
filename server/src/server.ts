@@ -7,7 +7,7 @@ const startServer = async () => {
     await prisma.$connect();
     console.log('Connected to database successfully');
 
-    app.listen(env.PORT, () => {
+    app.listen(env.PORT, '0.0.0.0', () => {
       console.log(`Server is running in ${env.NODE_ENV} mode on port ${env.PORT}`);
     });
   } catch (error) {

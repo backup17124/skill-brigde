@@ -8,7 +8,7 @@ A full-stack career platform for students and freshers. Students browse jobs, ap
 |-------|-------|
 | Frontend | React 18, TypeScript, Vite, Tailwind CSS 4, React Router, Axios |
 | Backend | Node.js, Express, TypeScript, Zod |
-| Database | SQLite (local dev) via Prisma ORM |
+| Database | PostgreSQL via Prisma ORM |
 | Auth | JWT access tokens (15 min) + httpOnly refresh cookies (7 days), bcrypt |
 
 ## Project Structure
@@ -48,7 +48,13 @@ skillbridge/
 npm install
 ```
 
-### 2. Configure environment
+### 2. Start PostgreSQL
+
+```bash
+docker compose up -d
+```
+
+### 3. Configure environment
 
 Copy the example env file and adjust if needed:
 
@@ -59,22 +65,22 @@ cp server/.env.example server/.env
 Default values work for local development:
 
 ```env
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://skillbridge:skillbridge_dev@localhost:5432/skillbridge"
 JWT_SECRET="your-super-secret-jwt-key-change-in-production"
 JWT_REFRESH_SECRET="your-super-secret-refresh-key-change-in-production"
 PORT=5000
 CLIENT_URL="http://localhost:5173"
 ```
 
-### 3. Set up the database
+### 4. Set up the database
 
 ```bash
 npm run db:setup
 ```
 
-This creates the SQLite database, applies the schema, and seeds demo data.
+This applies the schema and seeds demo data.
 
-### 4. Start development servers
+### 5. Start development servers
 
 ```bash
 npm run dev
@@ -214,16 +220,54 @@ GitHub Actions runs on push/PR to `main`, `master`, and `dev`:
 
 See `.github/workflows/ci.yml`.
 
-## Deployment Notes
+## Deployment (Render)
 
-The project uses **SQLite for local development**. For production deployment (Render, Railway, etc.), switch Prisma to **PostgreSQL**:
+The API and frontend are served from **one Render web service**. Use a hosted PostgreSQL database (Neon free tier works well).
 
-1. Change `provider` in `server/prisma/schema.prisma` to `postgresql`
-2. Set `DATABASE_URL` to your cloud PostgreSQL connection string
-3. Run migrations on the host: `npm run db:migrate`
-4. Set environment variables: `JWT_SECRET`, `JWT_REFRESH_SECRET`, `CLIENT_URL`, `NODE_ENV=production`
-5. Deploy frontend to Vercel with the production API URL
-6. Configure CORS (`CLIENT_URL`) to match your deployed frontend origin
+### 1. Create a Postgres database (Neon)
+
+1. Sign up at [neon.tech](https://neon.tech)
+2. Create a project named `skillbridge`
+3. Copy the connection string (include `?sslmode=require`)
+
+### 2. Push this repo to GitHub
+
+Render deploys from `main` on [github.com/backup17124/skill-brigde](https://github.com/backup17124/skill-brigde).
+
+### 3. Create a Render web service
+
+1. Go to [dashboard.render.com](https://dashboard.render.com) → **New** → **Web Service**
+2. Connect the `backup17124/skill-brigde` GitHub repo
+3. Use these settings:
+
+| Setting | Value |
+|---------|--------|
+| Runtime | Node |
+| Region | Oregon (or closest) |
+| Build command | `npm install && npm run build` |
+| Start command | `npx prisma migrate deploy --schema=server/prisma/schema.prisma && npm run start` |
+| Instance | Free |
+
+4. Add environment variables:
+
+| Key | Value |
+|------|--------|
+| `NODE_ENV` | `production` |
+| `NODE_VERSION` | `20` |
+| `DATABASE_URL` | Neon connection string |
+| `JWT_SECRET` | a long random string |
+| `JWT_REFRESH_SECRET` | a different long random string |
+| `CLIENT_URL` | your Render URL, e.g. `https://skillbridge.onrender.com` (set this after the first deploy if needed) |
+
+5. Deploy. After it is live, open a Render **Shell** and seed demo accounts:
+
+```bash
+npm run db:seed
+```
+
+Demo logins still use password `password123`.
+
+The free Render instance sleeps after idle time; the first request after sleep can take ~50 seconds.
 
 ## Troubleshooting
 
